@@ -9,6 +9,8 @@ interface EnvConfig {
   DB_USER: string;
   DB_PASSWORD: string;
   DB_NAME: string;
+  JWT_SECRET: string;
+  JWT_REFRESH_SECRET: string;
 }
 
 const EnvSchema = z.object({
@@ -18,7 +20,9 @@ const EnvSchema = z.object({
   DB_PORT: z.coerce.number().default(5432),
   DB_USER: z.string().default('postgres'),
   DB_PASSWORD: z.string().default('postgres'),
-  DB_NAME: z.string().default('files-storage'),
+  DB_NAME: z.string().default('files_storage'),
+  JWT_SECRET: z.string().min(1),
+  JWT_REFRESH_SECRET: z.string().min(1),
 });
 
 const { data, error } = EnvSchema.safeParse(process.env);
