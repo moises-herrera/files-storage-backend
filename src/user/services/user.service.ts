@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { LoginUserResponseDto } from 'src/user/dtos/login-user-response.dto';
 import { UserDto } from 'src/user/dtos/user.dto';
 import { HasherService } from 'src/common/services/hasher.service';
+import { LoginUserDto } from '../dtos/login-user.dto';
 
 @Injectable()
 export class UserService {
@@ -32,7 +33,25 @@ export class UserService {
     return userDto;
   }
 
-  async login(email: string, password: string): Promise<LoginUserResponseDto> {
+  async register(dto: CreateUserDto): Promise<LoginUserResponseDto> {
+    const createdUser = await this.create(dto);
+    const { accessToken, refreshToken } = this.authService.generateTokens({
+      userId: createdUser.id,
+    });
+
+    const response: LoginUserResponseDto = {
+      accessToken,
+      refreshToken,
+      user: createdUser,
+    };
+
+    return response;
+  }
+
+  async login({
+    email,
+    password,
+  }: LoginUserDto): Promise<LoginUserResponseDto> {
     const hashedPassword = await HasherService.hashPassword(password);
     const user = await this.userRepository.findOne({
       email,
