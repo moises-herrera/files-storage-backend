@@ -29,7 +29,7 @@ export class User extends BaseEntity {
   @Property({ type: t.text, hidden: true, lazy: true })
   password: string;
 
-  @Property({ type: t.string, nullable: true })
+  @Property({ type: t.string, nullable: true, lazy: true })
   refreshToken?: string;
 
   @OneToMany({ entity: () => File, mappedBy: 'owner' })
