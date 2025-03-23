@@ -4,6 +4,7 @@ import { z } from 'zod';
 interface EnvConfig {
   NODE_ENV: string;
   PORT: number;
+  FRONTEND_URL: string;
   DB_HOST: string;
   DB_PORT: number;
   DB_USER: string;
@@ -16,6 +17,7 @@ interface EnvConfig {
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production']).default('development'),
   PORT: z.coerce.number().min(0).default(3000),
+  FRONTEND_URL: z.string().min(1),
   DB_HOST: z.string().default('localhost'),
   DB_PORT: z.coerce.number().default(5432),
   DB_USER: z.string().default('postgres'),
