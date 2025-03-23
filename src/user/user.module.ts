@@ -8,6 +8,7 @@ import { AuthService } from 'src/user/services/auth.service';
 import { UserService } from 'src/user/services/user.service';
 import { JwtStrategy } from 'src/user/strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { UserController } from './user.controller';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
-  controllers: [],
+  controllers: [UserController],
   providers: [AuthService, UserService, JwtStrategy, JwtRefreshStrategy],
   exports: [],
 })
