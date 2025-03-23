@@ -9,6 +9,7 @@ import { UserDto } from 'src/user/dtos/user.dto';
 import { LoginUserDto } from 'src/user/dtos/login-user.dto';
 import { FolderService } from 'src/storage/services/folder.service';
 import { HasherService } from 'src/common/services/hasher.service';
+import { UpdateUserDto } from '../dtos/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -60,6 +61,29 @@ export class UserService {
     }
 
     return this.authenticateUser(user);
+  }
+
+  async updateUser(id: string, dto: UpdateUserDto): Promise<UserDto> {
+    if (
+      Object.keys(dto).length === 0 ||
+      Object.values(dto).every((value) => !value)
+    ) {
+      throw new BadRequestException('No data to update');
+    }
+
+    const user = await this.userRepository.findOneOrFail(id, {
+      populate: ['password'],
+    });
+
+    Object.entries(dto).forEach(([key, value]) => {
+      if (key in user && value) {
+        user[key] = value as User[keyof User];
+      }
+    });
+
+    await this.entityManager.persistAndFlush(user);
+
+    return this.mapUserToDto(user);
   }
 
   private async authenticateUser(user: User): Promise<LoginUserResponse> {

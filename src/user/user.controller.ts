@@ -1,4 +1,14 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Patch,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './services/user.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { LoginUserDto } from './dtos/login-user.dto';
@@ -6,6 +16,10 @@ import { Response } from 'express';
 import { envConfig } from 'src/config/env.config';
 import { AuthTokens } from './interfaces/auth-tokens.interface';
 import { AuthUserResponseDto } from './dtos/auth-user-response.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UpdateUserDto } from './dtos/update-user.dto';
+import { ExtendedRequest } from 'src/common/interfaces/extended-request.interface';
+import { UserDto } from './dtos/user.dto';
 
 @Controller('user')
 export class UserController {
@@ -35,6 +49,15 @@ export class UserController {
     this.setAuthCookies(res, { accessToken, refreshToken });
 
     return { user };
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  async updateUser(
+    @Req() req: ExtendedRequest,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<UserDto> {
+    return this.userService.updateUser(req.user.id, updateUserDto);
   }
 
   private setAuthCookies(
