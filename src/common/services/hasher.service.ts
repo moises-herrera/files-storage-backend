@@ -6,9 +6,13 @@ export class HasherService {
   }
 
   static async verifyPassword(
-    password: string,
     hashedPassword: string,
+    password: string,
   ): Promise<boolean> {
-    return verify(hashedPassword, password);
+    try {
+      return verify(hashedPassword, password);
+    } catch {
+      return false;
+    }
   }
 }

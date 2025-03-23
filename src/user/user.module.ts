@@ -9,10 +9,12 @@ import { UserService } from 'src/user/services/user.service';
 import { JwtStrategy } from 'src/user/strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { UserController } from './user.controller';
+import { StorageModule } from 'src/storage/storage.module';
 
 @Module({
   imports: [
     MikroOrmModule.forFeature({ entities: [User] }),
+    StorageModule,
     JwtModule.register({
       secret: envConfig.JWT_SECRET,
       signOptions: { expiresIn: '1h' },

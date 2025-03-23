@@ -1,13 +1,14 @@
-import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
+import { EntityManager, EntityRepository, wrap } from '@mikro-orm/postgresql';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { User } from 'src/user/entities/user.entity';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { CreateUserDto } from 'src/user/dtos/create-user.dto';
 import { AuthService } from './auth.service';
-import { LoginUserResponseDto } from 'src/user/dtos/login-user-response.dto';
+import { LoginUserResponse } from 'src/user/interfaces/login-user-response.interface';
 import { UserDto } from 'src/user/dtos/user.dto';
+import { LoginUserDto } from 'src/user/dtos/login-user.dto';
+import { FolderService } from 'src/storage/services/folder.service';
 import { HasherService } from 'src/common/services/hasher.service';
-import { LoginUserDto } from '../dtos/login-user.dto';
 
 @Injectable()
 export class UserService {
@@ -16,9 +17,10 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: EntityRepository<User>,
     private readonly authService: AuthService,
+    private readonly folderService: FolderService,
   ) {}
 
-  async create(dto: CreateUserDto): Promise<UserDto> {
+  async create(dto: CreateUserDto): Promise<User> {
     const existsUser = await this.userRepository.count({ email: dto.email });
 
     if (existsUser) {
@@ -27,49 +29,52 @@ export class UserService {
 
     const user = new User(dto.firstName, dto.lastName, dto.email, dto.password);
     await this.entityManager.persistAndFlush(user);
+    await this.folderService.createFolder('default', user.id);
 
-    const userDto = this.mapUserToDto(user);
-
-    return userDto;
+    return user;
   }
 
-  async register(dto: CreateUserDto): Promise<LoginUserResponseDto> {
+  async register(dto: CreateUserDto): Promise<LoginUserResponse> {
     const createdUser = await this.create(dto);
-    const { accessToken, refreshToken } = this.authService.generateTokens({
-      userId: createdUser.id,
-    });
-
-    const response: LoginUserResponseDto = {
-      accessToken,
-      refreshToken,
-      user: createdUser,
-    };
-
-    return response;
+    return this.authenticateUser(createdUser);
   }
 
-  async login({
-    email,
-    password,
-  }: LoginUserDto): Promise<LoginUserResponseDto> {
-    const hashedPassword = await HasherService.hashPassword(password);
-    const user = await this.userRepository.findOne({
-      email,
-      password: hashedPassword,
-    });
+  async login({ email, password }: LoginUserDto): Promise<LoginUserResponse> {
+    const user = await this.userRepository.findOne(
+      {
+        email,
+      },
+      {
+        populate: ['password'],
+      },
+    );
 
     if (!user) {
       throw new BadRequestException('Invalid credentials');
     }
 
+    const isPasswordValid = await user.verifyPassword(password);
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid credentials');
+    }
+
+    return this.authenticateUser(user);
+  }
+
+  private async authenticateUser(user: User): Promise<LoginUserResponse> {
     const { accessToken, refreshToken } = this.authService.generateTokens({
       userId: user.id,
     });
 
-    const response: LoginUserResponseDto = {
+    const refreshTokenHash = await HasherService.hashPassword(refreshToken);
+    wrap(user).assign({ refreshToken: refreshTokenHash });
+    await this.entityManager.persistAndFlush(user);
+
+    const response: LoginUserResponse = {
+      user: this.mapUserToDto(user),
       accessToken,
       refreshToken,
-      user: this.mapUserToDto(user),
     };
 
     return response;

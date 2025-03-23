@@ -30,4 +30,11 @@ export class Folder extends BaseEntity {
 
   @OneToMany({ entity: () => FolderPermission, mappedBy: 'folder' })
   permissions = new Collection<FolderPermission>(this);
+
+  constructor(name: string, owner: User, parentFolder?: Folder) {
+    super();
+    this.name = name;
+    this.owner = owner;
+    this.parentFolder = parentFolder;
+  }
 }

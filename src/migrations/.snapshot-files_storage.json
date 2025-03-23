@@ -153,6 +153,16 @@
           "primary": false,
           "nullable": false,
           "mappedType": "text"
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 255,
+          "mappedType": "string"
         }
       },
       "name": "user",
