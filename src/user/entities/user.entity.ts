@@ -8,12 +8,12 @@ import {
   Property,
   t,
 } from '@mikro-orm/core';
-import { hash, verify } from 'argon2';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { File } from 'src/storage/entities/file.entity';
 import { Folder } from 'src/storage/entities/folder.entity';
 import { FilePermission } from 'src/storage/entities/file-permission.entity';
 import { FolderPermission } from 'src/storage/entities/folder-permission.entity';
+import { HasherService } from 'src/common/services/hasher.service';
 
 @Entity()
 export class User extends BaseEntity {
@@ -28,6 +28,9 @@ export class User extends BaseEntity {
 
   @Property({ type: t.text, hidden: true, lazy: true })
   password: string;
+
+  @Property({ type: t.string, nullable: true })
+  refreshToken?: string;
 
   @OneToMany({ entity: () => File, mappedBy: 'owner' })
   files = new Collection<File>(this);
@@ -60,11 +63,11 @@ export class User extends BaseEntity {
     const password = args.changeSet?.payload.password;
 
     if (password) {
-      this.password = await hash(password);
+      this.password = await HasherService.hashPassword(password);
     }
   }
 
   async verifyPassword(passwordToVerify: string): Promise<boolean> {
-    return verify(this.password, passwordToVerify);
+    return HasherService.verifyPassword(this.password, passwordToVerify);
   }
 }
