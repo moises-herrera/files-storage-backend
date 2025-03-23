@@ -51,6 +51,16 @@ export class UserController {
     return { user };
   }
 
+  @Get('logout')
+  @UseGuards(JwtAuthGuard)
+  logout(@Res() res: Response): void {
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    res.status(HttpStatus.OK).json({
+      message: 'Logged out successfully',
+    });
+  }
+
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
   async updateUser(
