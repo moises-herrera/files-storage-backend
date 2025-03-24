@@ -6,6 +6,7 @@ import { Permission } from './entities/permission.entity';
 import { FolderPermission } from './entities/folder-permission.entity';
 import { FilePermission } from './entities/file-permission.entity';
 import { FolderService } from './services/folder.service';
+import { FolderController } from './controllers/folder.controller';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { FolderService } from './services/folder.service';
       entities: [Permission, Folder, File, FolderPermission, FilePermission],
     }),
   ],
+  controllers: [FolderController],
   providers: [FolderService],
   exports: [FolderService],
 })

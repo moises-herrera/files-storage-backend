@@ -30,7 +30,7 @@ export class UserService {
 
     const user = new User(dto.firstName, dto.lastName, dto.email, dto.password);
     await this.entityManager.persistAndFlush(user);
-    await this.folderService.createFolder('default', user.id);
+    await this.folderService.create('Files', user.id);
 
     return user;
   }

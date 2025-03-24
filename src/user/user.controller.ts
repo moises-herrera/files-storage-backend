@@ -21,7 +21,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { ExtendedRequest } from 'src/common/interfaces/extended-request.interface';
 import { UserDto } from './dtos/user.dto';
 
-@Controller('user')
+@Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
