@@ -28,8 +28,8 @@ export class FileService {
   ) {}
 
   async upload(
-    file: Express.Multer.File,
     userId: string,
+    file: Express.Multer.File,
     folderId?: string,
   ): Promise<FileDto> {
     let folderReference: Folder | undefined;
@@ -91,11 +91,47 @@ export class FileService {
     return this.mapFileToDto(fileToCreate);
   }
 
-  async rename(fileId: string, newName: string, userId: string) {}
+  async rename(
+    userId: string,
+    fileId: string,
+    newName: string,
+  ): Promise<FileDto> {
+    const file = await this.fileRepository.findOne(
+      {
+        id: fileId,
+        $or: [
+          { owner: userId },
+          { permissions: { user: userId, permission: { name: 'WRITE' } } },
+        ],
+      },
+      {
+        populate: ['permissions.permission'],
+      },
+    );
+
+    if (!file) {
+      throw new NotFoundException('File not found');
+    }
+
+    file.name = newName;
+
+    try {
+      await this.entityManager.persistAndFlush(file);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to rename file in database',
+        {
+          cause: error,
+        },
+      );
+    }
+
+    return this.mapFileToDto(file);
+  }
 
   async getUrl(fileId: string) {}
 
-  async deleteMany(fileIds: string[], userId: string) {
+  async deleteMany(userId: string, fileIds: string[]): Promise<void> {
     const files = await this.fileRepository.find({
       id: {
         $in: fileIds,
