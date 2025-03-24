@@ -1,7 +1,9 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { File as FileEntity } from 'src/storage/entities/file.entity';
@@ -12,6 +14,7 @@ import { Permission } from 'src/storage/entities/permission.entity';
 import { FilePermission } from 'src/storage/entities/file-permission.entity';
 import { FileDto } from 'src/storage/dtos/file.dto';
 import { StorageService } from './storage.service';
+import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class FileService {
@@ -48,9 +51,8 @@ export class FileService {
       );
     }
 
-    const fileExtension = file.originalname.split('.').pop() || '';
-    const userReference = this.entityManager.getReference(User, userId);
-    const storagePath = `users/${userId}/files/${file.originalname}`;
+    const fileId = uuid();
+    const storagePath = `users/${userId}/files/${fileId}`;
 
     try {
       await this.storageService.uploadFile(file, storagePath);
@@ -60,7 +62,11 @@ export class FileService {
       });
     }
 
+    const fileExtension = file.originalname.split('.').pop() || '';
+    const userReference = this.entityManager.getReference(User, userId);
+
     const fileToCreate = new FileEntity(
+      fileId,
       file.originalname,
       fileExtension,
       file.size,
@@ -89,7 +95,40 @@ export class FileService {
 
   async getUrl(fileId: string) {}
 
-  async delete(fileId: string) {}
+  async deleteMany(fileIds: string[], userId: string) {
+    const files = await this.fileRepository.find({
+      id: {
+        $in: fileIds,
+      },
+      $or: [
+        { owner: userId },
+        { permissions: { user: userId, permission: { name: 'WRITE' } } },
+      ],
+    });
+
+    if (!files.length) {
+      throw new NotFoundException('Files not found');
+    }
+
+    try {
+      await this.entityManager.transactional(async (em) => {
+        for (const file of files) {
+          await this.storageService.deleteFile(file.storagePath);
+          await em.nativeDelete(FilePermission, {
+            file: file.id,
+          });
+          await em.removeAndFlush(file);
+        }
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to delete files from storage',
+        {
+          cause: error,
+        },
+      );
+    }
+  }
 
   private async setDefaultPermissions(
     file: FileEntity,

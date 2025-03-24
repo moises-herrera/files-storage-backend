@@ -12,4 +12,10 @@ export abstract class BaseEntity {
 
   @Property({ onUpdate: () => new Date() })
   updatedAt = new Date();
+
+  constructor(id?: string) {
+    if (id) {
+      this.id = id;
+    }
+  }
 }

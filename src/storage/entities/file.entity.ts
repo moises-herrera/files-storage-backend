@@ -44,6 +44,7 @@ export class File extends BaseEntity {
   permissions = new Collection<FilePermission>(this);
 
   constructor(
+    id: string,
     name: string,
     extension: string,
     size: number,
@@ -52,7 +53,7 @@ export class File extends BaseEntity {
     owner: User,
     folder: Folder,
   ) {
-    super();
+    super(id);
     this.name = name;
     this.extension = extension;
     this.size = size;

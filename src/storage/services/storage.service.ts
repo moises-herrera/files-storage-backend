@@ -3,6 +3,7 @@ import {
   S3Client,
   PutObjectCommand,
   S3ServiceException,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { envConfig } from 'src/config/env.config';
 
@@ -41,6 +42,22 @@ export class StorageService {
       } else {
         throw caught;
       }
+    }
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    const command = new DeleteObjectCommand({
+      Bucket: envConfig.BUCKET_NAME,
+      Key: path,
+    });
+
+    try {
+      await this.client.send(command);
+    } catch (error) {
+      console.error(
+        `Error from S3 while deleting object from ${envConfig.BUCKET_NAME}. ${error}`,
+      );
+      throw error;
     }
   }
 }

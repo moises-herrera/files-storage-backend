@@ -87,7 +87,10 @@ export class FolderService {
   ): Promise<FolderDto> {
     const folder = await this.folderRepository.findOne({
       id: folderId,
-      permissions: { user: userId, permission: { name: 'WRITE' } },
+      $or: [
+        { owner: userId },
+        { permissions: { user: userId, permission: { name: 'WRITE' } } },
+      ],
     });
 
     if (!folder) {
@@ -104,24 +107,33 @@ export class FolderService {
   async deleteMany(userId: string, folderIds: string[]): Promise<void> {
     const folders = await this.folderRepository.find({
       id: { $in: folderIds },
-      permissions: { user: userId, permission: { name: 'WRITE' } },
+      $or: [
+        { owner: userId },
+        { permissions: { user: userId, permission: { name: 'WRITE' } } },
+      ],
     });
 
     if (!folders.length) {
       throw new NotFoundException('Folders not found');
     }
 
-    await this.entityManager.transactional(async (em) => {
-      for (const folder of folders) {
-        await em.nativeDelete(FolderPermission, {
-          folder: folder.id,
-          user: userId,
-        });
-        await em.nativeDelete(File, { folder: folder.id });
-        await em.nativeDelete(Folder, { parentFolder: folder.id });
-        await em.nativeDelete(Folder, { owner: userId, id: folder.id });
-      }
-    });
+    try {
+      await this.entityManager.transactional(async (em) => {
+        for (const folder of folders) {
+          await em.nativeDelete(FolderPermission, {
+            folder: folder.id,
+            user: userId,
+          });
+          await em.nativeDelete(File, { folder: folder.id });
+          await em.nativeDelete(Folder, { parentFolder: folder.id });
+          await em.nativeDelete(Folder, { owner: userId, id: folder.id });
+        }
+      });
+    } catch (error) {
+      throw new NotFoundException('Failed to delete folders from database', {
+        cause: error,
+      });
+    }
   }
 
   private async setDefaultPermissions(
