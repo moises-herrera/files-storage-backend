@@ -14,4 +14,11 @@ export class FilePermission extends BaseEntity {
 
   @ManyToOne({ entity: () => Permission })
   permission: Permission;
+
+  constructor(file: File, user: User, permission: Permission) {
+    super();
+    this.file = file;
+    this.user = user;
+    this.permission = permission;
+  }
 }

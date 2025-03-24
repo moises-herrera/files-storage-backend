@@ -1,4 +1,5 @@
 import {
+  Cascade,
   Collection,
   Entity,
   ManyToOne,
@@ -22,13 +23,28 @@ export class Folder extends BaseEntity {
   @ManyToOne({ entity: () => Folder, nullable: true })
   parentFolder?: Folder;
 
-  @OneToMany({ entity: () => Folder, mappedBy: 'parentFolder' })
+  @OneToMany({
+    entity: () => Folder,
+    mappedBy: 'parentFolder',
+    cascade: [Cascade.REMOVE],
+    orphanRemoval: true,
+  })
   subFolders = new Collection<Folder>(this);
 
-  @OneToMany({ entity: () => File, mappedBy: 'folder' })
+  @OneToMany({
+    entity: () => File,
+    mappedBy: 'folder',
+    cascade: [Cascade.REMOVE],
+    orphanRemoval: true,
+  })
   files = new Collection<File>(this);
 
-  @OneToMany({ entity: () => FolderPermission, mappedBy: 'folder' })
+  @OneToMany({
+    entity: () => FolderPermission,
+    mappedBy: 'folder',
+    cascade: [Cascade.REMOVE],
+    orphanRemoval: true,
+  })
   permissions = new Collection<FolderPermission>(this);
 
   constructor(name: string, owner: User, parentFolder?: Folder) {

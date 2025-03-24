@@ -1,4 +1,5 @@
 import {
+  Cascade,
   Collection,
   Entity,
   ManyToOne,
@@ -34,6 +35,30 @@ export class File extends BaseEntity {
   @ManyToOne({ entity: () => Folder })
   folder: Folder;
 
-  @OneToMany({ entity: () => FilePermission, mappedBy: 'file' })
+  @OneToMany({
+    entity: () => FilePermission,
+    mappedBy: 'file',
+    cascade: [Cascade.REMOVE],
+    orphanRemoval: true,
+  })
   permissions = new Collection<FilePermission>(this);
+
+  constructor(
+    name: string,
+    extension: string,
+    size: number,
+    mimeType: string,
+    storagePath: string,
+    owner: User,
+    folder: Folder,
+  ) {
+    super();
+    this.name = name;
+    this.extension = extension;
+    this.size = size;
+    this.mimeType = mimeType;
+    this.storagePath = storagePath;
+    this.owner = owner;
+    this.folder = folder;
+  }
 }

@@ -14,4 +14,11 @@ export class FolderPermission extends BaseEntity {
 
   @ManyToOne({ entity: () => Permission })
   permission: Permission;
+
+  constructor(folder: Folder, user: User, permission: Permission) {
+    super();
+    this.folder = folder;
+    this.user = user;
+    this.permission = permission;
+  }
 }

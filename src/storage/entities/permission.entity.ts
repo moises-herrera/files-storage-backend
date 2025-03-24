@@ -23,4 +23,10 @@ export class Permission extends BaseEntity {
 
   @OneToMany({ entity: () => FilePermission, mappedBy: 'permission' })
   filePermissions = new Collection<FilePermission>(this);
+
+  constructor(name: string, description?: string) {
+    super();
+    this.name = name;
+    this.description = description;
+  }
 }
