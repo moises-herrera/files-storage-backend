@@ -21,8 +21,8 @@ import { CreateFolderDto } from 'src/storage/dtos/create-folder.dto';
 import { FolderInfoDto } from 'src/storage/dtos/folder-info.dto';
 import { FolderIdsDto } from 'src/storage/dtos/folder-ids.dto';
 import { Response } from 'express';
-import { FolderDto } from '../dtos/folder.dto';
-import { UpdateFolderDto } from '../dtos/update-folder.dto';
+import { FolderDto } from 'src/storage/dtos/folder.dto';
+import { UpdateFolderDto } from 'src/storage/dtos/update-folder.dto';
 
 @Controller('folders')
 @UseGuards(JwtAuthGuard)
