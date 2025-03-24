@@ -44,8 +44,8 @@ export class JwtRefreshStrategy extends PassportStrategy(
       ?.refreshToken;
 
     const isValidRefreshToken = await HasherService.verifyPassword(
-      refreshToken,
       user.refreshToken ?? '',
+      refreshToken,
     );
 
     if (!isValidRefreshToken) {

@@ -86,7 +86,7 @@ export class UserService {
     return this.mapUserToDto(user);
   }
 
-  private async authenticateUser(user: User): Promise<LoginUserResponse> {
+  async authenticateUser(user: User): Promise<LoginUserResponse> {
     const { accessToken, refreshToken } = this.authService.generateTokens({
       userId: user.id,
     });

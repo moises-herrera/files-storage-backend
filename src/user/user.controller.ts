@@ -20,6 +20,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { ExtendedRequest } from 'src/common/interfaces/extended-request.interface';
 import { UserDto } from './dtos/user.dto';
+import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
 
 @Controller('users')
 export class UserController {
@@ -59,6 +60,20 @@ export class UserController {
     res.status(HttpStatus.OK).json({
       message: 'Logged out successfully',
     });
+  }
+
+  @Get('refresh-token')
+  @UseGuards(JwtRefreshAuthGuard)
+  async refreshToken(
+    @Req() req: ExtendedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthUserResponseDto> {
+    const { user, accessToken, refreshToken } =
+      await this.userService.authenticateUser(req.user);
+
+    this.setAuthCookies(res, { accessToken, refreshToken });
+
+    return { user };
   }
 
   @Patch('profile')
