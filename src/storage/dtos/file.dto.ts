@@ -7,4 +7,6 @@ export class FileDto {
   readonly storagePath: string;
   readonly owner: string;
   readonly folder: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
 }

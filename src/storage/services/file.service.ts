@@ -249,6 +249,8 @@ export class FileService {
       storagePath: file.storagePath,
       owner: file.owner.id,
       folder: file.folder.id,
+      createdAt: file.createdAt,
+      updatedAt: file.updatedAt,
     };
   }
 }
