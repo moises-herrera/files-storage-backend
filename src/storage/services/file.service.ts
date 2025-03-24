@@ -15,7 +15,7 @@ import { FileDto } from 'src/storage/dtos/file.dto';
 import { StorageService } from './storage.service';
 import { v4 as uuid } from 'uuid';
 import { FileUrlDto } from 'src/storage/dtos/file-url.dto';
-import { UpdateFileDto } from '../dtos/update-file.dto';
+import { UpdateFileDto } from 'src/storage/dtos/update-file.dto';
 
 @Injectable()
 export class FileService {
@@ -28,17 +28,79 @@ export class FileService {
     private readonly storageService: StorageService,
   ) {}
 
+  private async saveFile(
+    userId: string,
+    file: Express.Multer.File,
+    folderReference: Folder,
+  ) {
+    const existingFile = await this.fileRepository.findOne({
+      name: file.originalname,
+      folder: folderReference,
+    });
+
+    const fileId = existingFile?.id ?? uuid();
+    const storagePath = `users/${userId}/files/${fileId}`;
+
+    try {
+      await this.storageService.uploadFile(file, storagePath);
+    } catch (error) {
+      throw new BadRequestException('Failed to upload file to storage', {
+        cause: error,
+      });
+    }
+
+    const fileExtension = file.originalname.split('.').pop() || '';
+
+    try {
+      if (!existingFile) {
+        const userReference = this.entityManager.getReference(User, userId);
+
+        const fileToCreate = new FileEntity(
+          fileId,
+          file.originalname,
+          fileExtension,
+          file.size,
+          file.mimetype,
+          storagePath,
+          userReference,
+          folderReference,
+        );
+        await this.setDefaultPermissions(fileToCreate, userReference);
+        await this.entityManager.persistAndFlush(fileToCreate);
+
+        return this.mapFileToDto(fileToCreate);
+      } else {
+        existingFile.extension = fileExtension;
+        existingFile.size = file.size;
+        existingFile.mimeType = file.mimetype;
+
+        await this.entityManager.persistAndFlush(existingFile);
+        return this.mapFileToDto(existingFile);
+      }
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to save file to database',
+        {
+          cause: error,
+        },
+      );
+    }
+  }
+
   async upload(
     userId: string,
     file: Express.Multer.File,
     folderId?: string,
   ): Promise<FileDto> {
-    let folderReference: Folder | undefined;
+    let folderReference: Folder | null;
 
     if (folderId) {
-      folderReference = this.entityManager.getReference(Folder, folderId);
+      folderReference = await this.entityManager.findOne(Folder, {
+        id: folderId,
+        $or: [{ permissions: { user: userId, permission: { name: 'WRITE' } } }],
+      });
     } else {
-      folderReference = await this.entityManager.findOneOrFail(Folder, {
+      folderReference = await this.entityManager.findOne(Folder, {
         parentFolder: null,
         owner: userId,
       });
@@ -52,44 +114,7 @@ export class FileService {
       );
     }
 
-    const fileId = uuid();
-    const storagePath = `users/${userId}/files/${fileId}`;
-
-    try {
-      await this.storageService.uploadFile(file, storagePath);
-    } catch (error) {
-      throw new BadRequestException('Failed to upload file to storage', {
-        cause: error,
-      });
-    }
-
-    const fileExtension = file.originalname.split('.').pop() || '';
-    const userReference = this.entityManager.getReference(User, userId);
-
-    const fileToCreate = new FileEntity(
-      fileId,
-      file.originalname,
-      fileExtension,
-      file.size,
-      file.mimetype,
-      storagePath,
-      userReference,
-      folderReference,
-    );
-
-    try {
-      await this.setDefaultPermissions(fileToCreate, userReference);
-      await this.entityManager.persistAndFlush(fileToCreate);
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to save file to database',
-        {
-          cause: error,
-        },
-      );
-    }
-
-    return this.mapFileToDto(fileToCreate);
+    return this.saveFile(userId, file, folderReference);
   }
 
   async update(
