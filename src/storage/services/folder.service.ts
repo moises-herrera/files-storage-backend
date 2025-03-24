@@ -5,8 +5,9 @@ import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { User } from 'src/user/entities/user.entity';
 import { Permission } from 'src/storage/entities/permission.entity';
 import { FolderPermission } from 'src/storage/entities/folder-permission.entity';
-import { FolderDto } from 'src/storage/dtos/folder.dto';
+import { FolderInfoDto } from 'src/storage/dtos/folder-info.dto';
 import { File } from 'src/storage/entities/file.entity';
+import { FolderDto } from '../dtos/folder.dto';
 
 @Injectable()
 export class FolderService {
@@ -39,7 +40,7 @@ export class FolderService {
     return folder;
   }
 
-  async getById(ownerId: string, folderId?: string): Promise<FolderDto> {
+  async getById(ownerId: string, folderId?: string): Promise<FolderInfoDto> {
     let folder: Folder | null = null;
 
     if (!folderId) {
@@ -59,7 +60,7 @@ export class FolderService {
         );
       }
 
-      return folder as unknown as FolderDto;
+      return folder as unknown as FolderInfoDto;
     }
 
     folder = await this.folderRepository.findOne(
@@ -75,6 +76,27 @@ export class FolderService {
     if (!folder) {
       throw new NotFoundException(`Folder with id ${folderId} not found`);
     }
+
+    return folder as unknown as FolderInfoDto;
+  }
+
+  async update(
+    folderId: string,
+    folderName: string,
+    ownerId: string,
+  ): Promise<FolderDto> {
+    const folder = await this.folderRepository.findOne({
+      id: folderId,
+      owner: ownerId,
+    });
+
+    if (!folder) {
+      throw new NotFoundException(`Folder with id ${folderId} not found`);
+    }
+
+    folder.name = folderName;
+
+    await this.entityManager.persistAndFlush(folder);
 
     return folder as unknown as FolderDto;
   }

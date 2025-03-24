@@ -4,6 +4,9 @@ import {
   Delete,
   Get,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -15,9 +18,11 @@ import { FolderService } from 'src/storage/services/folder.service';
 import { JwtAuthGuard } from 'src/user/guards/jwt-auth.guard';
 import { FolderIdDto } from 'src/storage/dtos/folder-id.dto';
 import { CreateFolderDto } from 'src/storage/dtos/create-folder.dto';
-import { FolderDto } from 'src/storage/dtos/folder.dto';
+import { FolderInfoDto } from 'src/storage/dtos/folder-info.dto';
 import { FolderIdsDto } from 'src/storage/dtos/folder-ids.dto';
 import { Response } from 'express';
+import { FolderDto } from '../dtos/folder.dto';
+import { UpdateFolderDto } from '../dtos/update-folder.dto';
 
 @Controller('folders')
 @UseGuards(JwtAuthGuard)
@@ -28,16 +33,25 @@ export class FolderController {
   getFolderById(
     @Req() req: ExtendedRequest,
     @Query() { folderId }: FolderIdDto,
-  ): Promise<FolderDto> {
+  ): Promise<FolderInfoDto> {
     return this.folderService.getById(req.user.id, folderId);
   }
 
   @Post()
   createFolder(
     @Req() req: ExtendedRequest,
-    @Body() { folderName, parentFolderId }: CreateFolderDto,
+    @Body() { name, parentFolderId }: CreateFolderDto,
   ) {
-    return this.folderService.create(folderName, req.user.id, parentFolderId);
+    return this.folderService.create(name, req.user.id, parentFolderId);
+  }
+
+  @Patch(':id')
+  updateFolder(
+    @Req() req: ExtendedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() { name }: UpdateFolderDto,
+  ): Promise<FolderDto> {
+    return this.folderService.update(id, name, req.user.id);
   }
 
   @Delete()
