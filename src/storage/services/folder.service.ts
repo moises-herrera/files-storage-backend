@@ -40,7 +40,10 @@ export class FolderService {
     return this.mapFolderToDto(folder);
   }
 
-  async getById(ownerId: string, folderId?: string): Promise<FolderInfoDto> {
+  async getFolderContent(
+    ownerId: string,
+    folderId?: string,
+  ): Promise<FolderInfoDto> {
     let folder: Folder | null = null;
 
     if (!folderId) {
