@@ -12,6 +12,10 @@ interface EnvConfig {
   DB_NAME: string;
   JWT_SECRET: string;
   JWT_REFRESH_SECRET: string;
+  AWS_REGION: string;
+  BUCKET_NAME: string;
+  AWS_ACCESS_KEY_ID: string;
+  AWS_SECRET_ACCESS_KEY: string;
 }
 
 const EnvSchema = z.object({
@@ -25,6 +29,10 @@ const EnvSchema = z.object({
   DB_NAME: z.string().default('files_storage'),
   JWT_SECRET: z.string().min(1),
   JWT_REFRESH_SECRET: z.string().min(1),
+  AWS_REGION: z.string().default('us-east-1'),
+  BUCKET_NAME: z.string().min(1),
+  AWS_ACCESS_KEY_ID: z.string().min(1),
+  AWS_SECRET_ACCESS_KEY: z.string().min(1),
 });
 
 const { data, error } = EnvSchema.safeParse(process.env);
