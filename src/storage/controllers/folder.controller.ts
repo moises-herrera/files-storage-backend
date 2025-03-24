@@ -41,7 +41,7 @@ export class FolderController {
   createFolder(
     @Req() req: ExtendedRequest,
     @Body() { name, parentFolderId }: CreateFolderDto,
-  ) {
+  ): Promise<FolderDto> {
     return this.folderService.create(name, req.user.id, parentFolderId);
   }
 

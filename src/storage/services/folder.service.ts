@@ -7,7 +7,7 @@ import { Permission } from 'src/storage/entities/permission.entity';
 import { FolderPermission } from 'src/storage/entities/folder-permission.entity';
 import { FolderInfoDto } from 'src/storage/dtos/folder-info.dto';
 import { File } from 'src/storage/entities/file.entity';
-import { FolderDto } from '../dtos/folder.dto';
+import { FolderDto } from 'src/storage/dtos/folder.dto';
 
 @Injectable()
 export class FolderService {
@@ -23,7 +23,7 @@ export class FolderService {
     folderName: string,
     ownerId: string,
     parentFolderId?: string,
-  ): Promise<Folder> {
+  ): Promise<FolderDto> {
     const owner = this.entityManager.getReference(User, ownerId);
     let parentFolder: Folder | undefined;
 
@@ -37,7 +37,7 @@ export class FolderService {
 
     await this.entityManager.persistAndFlush(folder);
 
-    return folder;
+    return this.mapFolderToDto(folder);
   }
 
   async getById(ownerId: string, folderId?: string): Promise<FolderInfoDto> {
@@ -83,11 +83,11 @@ export class FolderService {
   async update(
     folderId: string,
     folderName: string,
-    ownerId: string,
+    userId: string,
   ): Promise<FolderDto> {
     const folder = await this.folderRepository.findOne({
       id: folderId,
-      owner: ownerId,
+      permissions: { user: userId, permission: { name: 'WRITE' } },
     });
 
     if (!folder) {
@@ -98,13 +98,13 @@ export class FolderService {
 
     await this.entityManager.persistAndFlush(folder);
 
-    return folder as unknown as FolderDto;
+    return this.mapFolderToDto(folder);
   }
 
-  async deleteMany(ownerId: string, folderIds: string[]): Promise<void> {
+  async deleteMany(userId: string, folderIds: string[]): Promise<void> {
     const folders = await this.folderRepository.find({
-      owner: ownerId,
       id: { $in: folderIds },
+      permissions: { user: userId, permission: { name: 'WRITE' } },
     });
 
     if (!folders.length) {
@@ -115,11 +115,11 @@ export class FolderService {
       for (const folder of folders) {
         await em.nativeDelete(FolderPermission, {
           folder: folder.id,
-          user: ownerId,
+          user: userId,
         });
         await em.nativeDelete(File, { folder: folder.id });
         await em.nativeDelete(Folder, { parentFolder: folder.id });
-        await em.nativeDelete(Folder, { owner: ownerId, id: folder.id });
+        await em.nativeDelete(Folder, { owner: userId, id: folder.id });
       }
     });
   }
@@ -137,5 +137,16 @@ export class FolderService {
       this.entityManager.persist(folderPermission);
       folder.permissions.add(folderPermission);
     }
+  }
+
+  private mapFolderToDto(folder: Folder): FolderDto {
+    return {
+      id: folder.id,
+      name: folder.name,
+      owner: folder.owner.id,
+      parentFolder: folder.parentFolder?.id || null,
+      createdAt: folder.createdAt,
+      updatedAt: folder.updatedAt,
+    };
   }
 }
