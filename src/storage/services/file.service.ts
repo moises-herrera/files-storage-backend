@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -15,6 +14,7 @@ import { FilePermission } from 'src/storage/entities/file-permission.entity';
 import { FileDto } from 'src/storage/dtos/file.dto';
 import { StorageService } from './storage.service';
 import { v4 as uuid } from 'uuid';
+import { FileUrlDto } from 'src/storage/dtos/file-url.dto';
 
 @Injectable()
 export class FileService {
@@ -129,7 +129,23 @@ export class FileService {
     return this.mapFileToDto(file);
   }
 
-  async getUrl(fileId: string) {}
+  async getUrl(userId: string, fileId: string): Promise<FileUrlDto> {
+    const file = await this.fileRepository.findOne({
+      id: fileId,
+      $or: [
+        { owner: userId },
+        { permissions: { user: userId, permission: { name: 'READ' } } },
+      ],
+    });
+
+    if (!file) {
+      throw new NotFoundException('File not found');
+    }
+
+    const url = await this.storageService.getFileUrl(file.storagePath);
+
+    return { url };
+  }
 
   async deleteMany(userId: string, fileIds: string[]): Promise<void> {
     const files = await this.fileRepository.find({

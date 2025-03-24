@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpStatus,
   Param,
   ParseUUIDPipe,
@@ -22,6 +23,7 @@ import { FileDto } from 'src/storage/dtos/file.dto';
 import { FileIdsDto } from 'src/storage/dtos/file-ids.dto';
 import { Response } from 'express';
 import { RenameFileDto } from 'src/storage/dtos/rename-file.dto';
+import { FileUrlDto } from 'src/storage/dtos/file-url.dto';
 
 @Controller('files')
 @UseGuards(JwtAuthGuard)
@@ -36,6 +38,14 @@ export class FileController {
     @UploadedFile() file: Express.Multer.File,
   ): Promise<FileDto> {
     return this.fileService.upload(req.user.id, file, folderId);
+  }
+
+  @Get(':fileId')
+  getFile(
+    @Req() req: ExtendedRequest,
+    @Param('fileId', ParseUUIDPipe) fileId: string,
+  ): Promise<FileUrlDto> {
+    return this.fileService.getUrl(req.user.id, fileId);
   }
 
   @Patch(':fileId')
