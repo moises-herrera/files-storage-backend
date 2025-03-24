@@ -34,7 +34,7 @@ export class FolderController {
     @Req() req: ExtendedRequest,
     @Query() { folderId }: FolderIdDto,
   ): Promise<FolderInfoDto> {
-    return this.folderService.getById(req.user.id, folderId);
+    return this.folderService.getFolderContent(req.user.id, folderId);
   }
 
   @Post()

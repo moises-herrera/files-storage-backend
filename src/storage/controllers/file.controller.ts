@@ -22,7 +22,7 @@ import { UploadFileDto } from 'src/storage/dtos/upload-file.dto';
 import { FileDto } from 'src/storage/dtos/file.dto';
 import { FileIdsDto } from 'src/storage/dtos/file-ids.dto';
 import { Response } from 'express';
-import { RenameFileDto } from 'src/storage/dtos/rename-file.dto';
+import { UpdateFileDto } from 'src/storage/dtos/update-file.dto';
 import { FileUrlDto } from 'src/storage/dtos/file-url.dto';
 
 @Controller('files')
@@ -30,7 +30,7 @@ import { FileUrlDto } from 'src/storage/dtos/file-url.dto';
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 
-  @Post('upload')
+  @Post()
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
     @Req() req: ExtendedRequest,
@@ -49,12 +49,12 @@ export class FileController {
   }
 
   @Patch(':fileId')
-  renameFile(
+  updateFile(
     @Req() req: ExtendedRequest,
     @Param('fileId', ParseUUIDPipe) fileId: string,
-    @Body() { name }: RenameFileDto,
+    @Body() updateFileDto: UpdateFileDto,
   ): Promise<FileDto> {
-    return this.fileService.rename(req.user.id, fileId, name);
+    return this.fileService.update(req.user.id, fileId, updateFileDto);
   }
 
   @Delete()

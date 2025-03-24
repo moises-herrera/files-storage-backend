@@ -15,6 +15,7 @@ import { FileDto } from 'src/storage/dtos/file.dto';
 import { StorageService } from './storage.service';
 import { v4 as uuid } from 'uuid';
 import { FileUrlDto } from 'src/storage/dtos/file-url.dto';
+import { UpdateFileDto } from '../dtos/update-file.dto';
 
 @Injectable()
 export class FileService {
@@ -91,10 +92,10 @@ export class FileService {
     return this.mapFileToDto(fileToCreate);
   }
 
-  async rename(
+  async update(
     userId: string,
     fileId: string,
-    newName: string,
+    updateFileDto: UpdateFileDto,
   ): Promise<FileDto> {
     const file = await this.fileRepository.findOne(
       {
@@ -113,13 +114,29 @@ export class FileService {
       throw new NotFoundException('File not found');
     }
 
-    file.name = newName;
+    file.name = updateFileDto.name || file.name;
+
+    if (updateFileDto.folderId) {
+      const folder = await this.entityManager.findOne(Folder, {
+        id: updateFileDto.folderId,
+        $or: [
+          { owner: userId },
+          { permissions: { user: userId, permission: { name: 'WRITE' } } },
+        ],
+      });
+
+      if (!folder) {
+        throw new NotFoundException('Folder not found');
+      }
+
+      file.folder = folder;
+    }
 
     try {
       await this.entityManager.persistAndFlush(file);
     } catch (error) {
       throw new InternalServerErrorException(
-        'Failed to rename file in database',
+        'Failed to update file in database',
         {
           cause: error,
         },
