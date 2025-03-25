@@ -18,7 +18,7 @@ import { FolderService } from 'src/storage/services/folder.service';
 import { JwtAuthGuard } from 'src/user/guards/jwt-auth.guard';
 import { FolderIdDto } from 'src/storage/dtos/folder-id.dto';
 import { CreateFolderDto } from 'src/storage/dtos/create-folder.dto';
-import { FolderInfoDto } from 'src/storage/dtos/folder-info.dto';
+import { FolderContentDto } from 'src/storage/dtos/folder-content.dto';
 import { FolderIdsDto } from 'src/storage/dtos/folder-ids.dto';
 import { Response } from 'express';
 import { FolderDto } from 'src/storage/dtos/folder.dto';
@@ -33,7 +33,7 @@ export class FolderController {
   getFolderById(
     @Req() req: ExtendedRequest,
     @Query() { folderId }: FolderIdDto,
-  ): Promise<FolderInfoDto> {
+  ): Promise<FolderContentDto> {
     return this.folderService.getFolderContent(req.user.id, folderId);
   }
 
