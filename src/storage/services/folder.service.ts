@@ -1,5 +1,9 @@
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Folder } from 'src/storage/entities/folder.entity';
 import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { User } from 'src/user/entities/user.entity';
@@ -271,9 +275,12 @@ export class FolderService {
         }
       });
     } catch (error) {
-      throw new NotFoundException('Failed to delete folders from database', {
-        cause: error,
-      });
+      throw new InternalServerErrorException(
+        'Failed to delete folders from database',
+        {
+          cause: error,
+        },
+      );
     }
   }
 
