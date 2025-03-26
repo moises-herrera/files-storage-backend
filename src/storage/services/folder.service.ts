@@ -27,13 +27,18 @@ export class FolderService {
     parentFolderId?: string,
   ): Promise<FolderDto> {
     const owner = this.entityManager.getReference(User, ownerId);
-    let parentFolder: Folder | undefined;
+    let parentFolder: Folder | null;
 
     if (parentFolderId) {
       parentFolder = this.entityManager.getReference(Folder, parentFolderId);
+    } else {
+      parentFolder = await this.folderRepository.findOne({
+        parentFolder: null,
+        owner: ownerId,
+      });
     }
 
-    const folder = new Folder(folderName, owner, parentFolder);
+    const folder = new Folder(folderName, owner, parentFolder as Folder);
 
     await this.setDefaultPermissions(folder, owner);
 
