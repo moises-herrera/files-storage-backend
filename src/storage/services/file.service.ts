@@ -204,6 +204,22 @@ export class FileService {
       throw new NotFoundException('Files not found');
     }
 
+    await this.deleteFiles(files);
+  }
+
+  async deleteManyByFolderId(userId: string, folderId: string): Promise<void> {
+    const files = await this.fileRepository.find({
+      folder: folderId,
+      $or: [
+        { owner: userId },
+        { permissions: { user: userId, permission: { name: 'WRITE' } } },
+      ],
+    });
+
+    await this.deleteFiles(files);
+  }
+
+  private async deleteFiles(files: FileEntity[]): Promise<void> {
     try {
       await this.entityManager.transactional(async (em) => {
         for (const file of files) {
