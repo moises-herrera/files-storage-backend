@@ -30,11 +30,11 @@ export class FolderController {
   constructor(private readonly folderService: FolderService) {}
 
   @Get()
-  getFolderById(
+  getOwnerFolderContent(
     @Req() req: ExtendedRequest,
     @Query() { folderId }: FolderIdDto,
   ): Promise<FolderContentDto> {
-    return this.folderService.getFolderContent(req.user.id, folderId);
+    return this.folderService.getOwnerFolderContent(req.user.id, folderId);
   }
 
   @Post()

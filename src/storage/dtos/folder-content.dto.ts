@@ -1,20 +1,14 @@
-import { PaginationMetadataDto } from 'src/common/dtos/pagination-metadata.dto';
 import { FolderItemDto } from './folder-item.dto';
-import { FolderItemPermissionDto } from './folder-permission.dto';
+import { FolderItemPermissionDto } from './folder-item-permission.dto';
+import { PaginatedResponseDto } from 'src/common/dtos/paginated-response.dto';
 
 export class FolderContentDto {
-  readonly folder: {
-    readonly id: string;
-    readonly name: string;
-    readonly owner: string;
-    readonly permissions: FolderItemPermissionDto[];
-    readonly parentFolder?: {
-      readonly id: string;
-      readonly name: string;
-    } | null;
-  };
-  readonly items: {
-    data: FolderItemDto[];
-    pagination: PaginationMetadataDto;
-  };
+  folders: {
+    id: string;
+    name: string;
+    owner: string;
+    permissions?: FolderItemPermissionDto[];
+    parentFolder?: string | null;
+  }[];
+  items: PaginatedResponseDto<FolderItemDto>;
 }
