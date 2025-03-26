@@ -64,7 +64,6 @@ export class FolderService {
               NULL::text AS extension,
               NULL::integer AS size,
               NULL::text AS "mimeType",
-              NULL::text AS "storagePath",
               owner_id AS owner,
               parent_folder_id AS folder
             FROM folder
@@ -81,7 +80,6 @@ export class FolderService {
               extension,
               size,
               mime_type AS "mimeType",
-              storage_path AS "storagePath",
               owner_id AS owner,
               folder_id AS folder
             FROM file
@@ -109,7 +107,6 @@ export class FolderService {
           extension,
           size,
           mimeType,
-          storagePath,
           owner,
           folder,
           createdAt,
@@ -122,7 +119,6 @@ export class FolderService {
             extension,
             size,
             mimeType,
-            storagePath,
             owner,
             folder,
             createdAt: new Date(createdAt),
