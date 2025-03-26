@@ -16,7 +16,7 @@ import {
 import { ExtendedRequest } from 'src/common/interfaces/extended-request.interface';
 import { FolderService } from 'src/storage/services/folder.service';
 import { JwtAuthGuard } from 'src/user/guards/jwt-auth.guard';
-import { FolderIdDto } from 'src/storage/dtos/folder-id.dto';
+import { GetFolderContentDto } from 'src/storage/dtos/get-folder-content.dto';
 import { CreateFolderDto } from 'src/storage/dtos/create-folder.dto';
 import { FolderContentDto } from 'src/storage/dtos/folder-content.dto';
 import { FolderIdsDto } from 'src/storage/dtos/folder-ids.dto';
@@ -32,9 +32,12 @@ export class FolderController {
   @Get()
   getOwnerFolderContent(
     @Req() req: ExtendedRequest,
-    @Query() { folderId }: FolderIdDto,
+    @Query() getFolderContentDto: GetFolderContentDto,
   ): Promise<FolderContentDto> {
-    return this.folderService.getOwnerFolderContent(req.user.id, folderId);
+    return this.folderService.getOwnerFolderContent({
+      ownerId: req.user.id,
+      ...getFolderContentDto,
+    });
   }
 
   @Post()

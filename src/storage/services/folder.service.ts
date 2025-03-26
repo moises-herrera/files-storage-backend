@@ -14,6 +14,7 @@ import { FolderDto } from 'src/storage/dtos/folder.dto';
 import { FolderItemDto } from 'src/storage/dtos/folder-item.dto';
 import { PaginatedResponseDto } from 'src/common/dtos/paginated-response.dto';
 import { FileService } from './file.service';
+import { GetOwnerFolderContentDto } from 'src/storage/dtos/get-folder-content.dto';
 
 @Injectable()
 export class FolderService {
@@ -52,12 +53,13 @@ export class FolderService {
     return this.mapFolderToDto(folder);
   }
 
-  async getOwnerFolderItems(
-    folderId: string,
-    ownerId: string,
+  async getOwnerFolderItems({
+    ownerId,
+    folderId,
+    search = '',
     page = 1,
     pageSize = 10,
-  ): Promise<PaginatedResponseDto<FolderItemDto>> {
+  }: GetOwnerFolderContentDto): Promise<PaginatedResponseDto<FolderItemDto>> {
     const offset = (page - 1) * pageSize;
     const results: (FolderItemDto & {
       totalItems: string;
@@ -99,11 +101,20 @@ export class FolderService {
         SELECT 
           *,
           COUNT(*) OVER() AS "totalItems"
-        FROM combined_items
+        FROM combined_items WHERE (? = '' OR name ILIKE ?)
         ORDER BY "updatedAt" DESC
         LIMIT ? OFFSET ?;
         `,
-      [folderId, ownerId, folderId, ownerId, pageSize, offset],
+      [
+        folderId,
+        ownerId,
+        folderId,
+        ownerId,
+        search,
+        `${search}%`,
+        pageSize,
+        offset,
+      ],
     );
     const totalItems = results.length ? parseInt(results[0].totalItems, 10) : 0;
     const totalPages = Math.ceil(totalItems / pageSize);
@@ -147,12 +158,13 @@ export class FolderService {
     return response;
   }
 
-  async getOwnerFolderContent(
-    ownerId: string,
-    folderId?: string,
+  async getOwnerFolderContent({
+    ownerId,
+    folderId,
+    search = '',
     page = 1,
     pageSize = 10,
-  ): Promise<FolderContentDto> {
+  }: GetOwnerFolderContentDto): Promise<FolderContentDto> {
     if (folderId) {
       const folders: {
         id: string;
@@ -179,12 +191,13 @@ export class FolderService {
         throw new NotFoundException(`Folder with id ${folderId} not found`);
       }
 
-      const folderItems = await this.getOwnerFolderItems(
+      const folderItems = await this.getOwnerFolderItems({
         folderId,
         ownerId,
+        search,
         page,
         pageSize,
-      );
+      });
 
       return {
         folders: folders.map((folder) => ({
@@ -206,12 +219,13 @@ export class FolderService {
       throw new NotFoundException('Root folder not found');
     }
 
-    const folderItems = await this.getOwnerFolderItems(
-      folder.id,
+    const folderItems = await this.getOwnerFolderItems({
+      folderId: folder.id,
       ownerId,
+      search,
       page,
       pageSize,
-    );
+    });
 
     return {
       folders: [
