@@ -10,10 +10,10 @@ import { User } from 'src/user/entities/user.entity';
 import { Permission } from 'src/storage/entities/permission.entity';
 import { FolderPermission } from 'src/storage/entities/folder-permission.entity';
 import { FolderContentDto } from 'src/storage/dtos/folder-content.dto';
-import { File } from 'src/storage/entities/file.entity';
 import { FolderDto } from 'src/storage/dtos/folder.dto';
 import { FolderItemDto } from 'src/storage/dtos/folder-item.dto';
 import { PaginatedResponseDto } from 'src/common/dtos/paginated-response.dto';
+import { FileService } from './file.service';
 
 @Injectable()
 export class FolderService {
@@ -23,6 +23,7 @@ export class FolderService {
     private readonly folderRepository: EntityRepository<Folder>,
     @InjectRepository(Permission)
     private readonly permissionRepository: EntityRepository<Permission>,
+    private readonly fileService: FileService,
   ) {}
 
   async create(
@@ -265,13 +266,7 @@ export class FolderService {
     try {
       await this.entityManager.transactional(async (em) => {
         for (const folder of folders) {
-          await em.nativeDelete(FolderPermission, {
-            folder: folder.id,
-            user: userId,
-          });
-          await em.nativeDelete(File, { folder: folder.id });
-          await em.nativeDelete(Folder, { parentFolder: folder.id });
-          await em.nativeDelete(Folder, { owner: userId, id: folder.id });
+          await this.deleteFolderRecursively(em, folder.id, userId);
         }
       });
     } catch (error) {
@@ -297,6 +292,25 @@ export class FolderService {
       this.entityManager.persist(folderPermission);
       folder.permissions.add(folderPermission);
     }
+  }
+
+  private async deleteFolderRecursively(
+    em: EntityManager,
+    folderId: string,
+    userId: string,
+  ): Promise<void> {
+    const subfolders = await em.find(Folder, {
+      parentFolder: folderId,
+      owner: userId,
+    });
+
+    for (const subfolder of subfolders) {
+      await this.deleteFolderRecursively(em, subfolder.id, userId);
+    }
+
+    await this.fileService.deleteManyByFolderId(userId, folderId);
+    await em.nativeDelete(FolderPermission, { folder: folderId });
+    await em.nativeDelete(Folder, { id: folderId, owner: userId });
   }
 
   private mapFolderToDto(folder: Folder): FolderDto {
