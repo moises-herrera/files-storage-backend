@@ -34,9 +34,11 @@ export class FileService {
     folderReference: Folder,
     entityManager: EntityManager,
   ) {
+    const fileExtension = file.originalname.split('.').pop() || '';
     const existingFile = await this.fileRepository.findOne({
       name: file.originalname,
       folder: folderReference,
+      extension: fileExtension,
     });
 
     const fileId = existingFile?.id ?? uuid();
@@ -49,8 +51,6 @@ export class FileService {
         cause: error,
       });
     }
-
-    const fileExtension = file.originalname.split('.').pop() || '';
 
     try {
       if (!existingFile) {
