@@ -32,6 +32,7 @@ export class FileService {
     userId: string,
     file: Express.Multer.File,
     folderReference: Folder,
+    entityManager: EntityManager,
   ) {
     const existingFile = await this.fileRepository.findOne({
       name: file.originalname,
@@ -53,7 +54,7 @@ export class FileService {
 
     try {
       if (!existingFile) {
-        const userReference = this.entityManager.getReference(User, userId);
+        const userReference = entityManager.getReference(User, userId);
 
         const fileToCreate = new FileEntity(
           fileId,
@@ -66,7 +67,7 @@ export class FileService {
           folderReference,
         );
         await this.setDefaultPermissions(fileToCreate, userReference);
-        await this.entityManager.persistAndFlush(fileToCreate);
+        await entityManager.persistAndFlush(fileToCreate);
 
         return this.mapFileToDto(fileToCreate);
       } else {
@@ -74,7 +75,7 @@ export class FileService {
         existingFile.size = file.size;
         existingFile.mimeType = file.mimetype;
 
-        await this.entityManager.persistAndFlush(existingFile);
+        await entityManager.persistAndFlush(existingFile);
         return this.mapFileToDto(existingFile);
       }
     } catch (error) {
@@ -89,9 +90,9 @@ export class FileService {
 
   async upload(
     userId: string,
-    file: Express.Multer.File,
+    files: Express.Multer.File[],
     folderId?: string,
-  ): Promise<FileDto> {
+  ): Promise<FileDto[]> {
     let folderReference: Folder | null;
 
     if (folderId) {
@@ -114,7 +115,21 @@ export class FileService {
       );
     }
 
-    return this.saveFile(userId, file, folderReference);
+    const response: FileDto[] = [];
+
+    await this.entityManager.transactional(async (em) => {
+      for (const file of files) {
+        const savedFile = await this.saveFile(
+          userId,
+          file,
+          folderReference,
+          em,
+        );
+        response.push(savedFile);
+      }
+    });
+
+    return response;
   }
 
   async update(

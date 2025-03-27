@@ -10,11 +10,11 @@ import {
   Post,
   Req,
   Res,
-  UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { ExtendedRequest } from 'src/common/interfaces/extended-request.interface';
 import { FileService } from 'src/storage/services/file.service';
 import { JwtAuthGuard } from 'src/user/guards/jwt-auth.guard';
@@ -31,13 +31,13 @@ export class FileController {
   constructor(private readonly fileService: FileService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FilesInterceptor('files'))
   uploadFile(
     @Req() req: ExtendedRequest,
     @Body() { folderId }: UploadFileDto,
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<FileDto> {
-    return this.fileService.upload(req.user.id, file, folderId);
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<FileDto[]> {
+    return this.fileService.upload(req.user.id, files, folderId);
   }
 
   @Get(':fileId')
