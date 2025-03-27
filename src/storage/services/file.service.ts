@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { File as FileEntity } from 'src/storage/entities/file.entity';
-import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
+import { EntityManager, EntityRepository, wrap } from '@mikro-orm/postgresql';
 import { User } from 'src/user/entities/user.entity';
 import { Folder } from 'src/storage/entities/folder.entity';
 import { Permission } from 'src/storage/entities/permission.entity';
@@ -71,9 +71,12 @@ export class FileService {
 
         return this.mapFileToDto(fileToCreate);
       } else {
-        existingFile.extension = fileExtension;
-        existingFile.size = file.size;
-        existingFile.mimeType = file.mimetype;
+        wrap(existingFile).assign({
+          extension: fileExtension,
+          size: file.size,
+          mimeType: file.mimetype,
+          updatedAt: new Date(),
+        });
 
         await entityManager.persistAndFlush(existingFile);
         return this.mapFileToDto(existingFile);
