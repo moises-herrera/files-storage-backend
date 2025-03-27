@@ -15,6 +15,8 @@ import { FolderItemDto } from 'src/storage/dtos/folder-item.dto';
 import { PaginatedResponseDto } from 'src/common/dtos/paginated-response.dto';
 import { FileService } from './file.service';
 import { GetOwnerFolderContentDto } from 'src/storage/dtos/get-folder-content.dto';
+import { FolderRelatedDto } from '../dtos/folder-related.dto';
+import { PaginationParamsDto } from 'src/common/dtos/pagination-params.dto';
 
 @Injectable()
 export class FolderService {
@@ -238,6 +240,34 @@ export class FolderService {
       ],
       items: folderItems,
     };
+  }
+
+  async getRecentFolders(
+    userId: string,
+    { page = 1, pageSize = 10 }: PaginationParamsDto,
+  ): Promise<FolderRelatedDto[]> {
+    const folders = await this.folderRepository.find(
+      {
+        parentFolder: {
+          $ne: null,
+        },
+        $or: [{ owner: userId }, { permissions: { user: userId } }],
+      },
+      {
+        fields: ['id', 'name', 'owner', 'parentFolder'],
+        orderBy: { updatedAt: 'DESC' },
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      },
+    );
+    const foldersMapped = folders.map(({ id, name, owner, parentFolder }) => ({
+      id,
+      name,
+      owner: owner.id,
+      parentFolder: parentFolder?.id || null,
+    }));
+
+    return foldersMapped;
   }
 
   async update(
