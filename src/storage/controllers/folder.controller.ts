@@ -23,13 +23,15 @@ import { FolderIdsDto } from 'src/storage/dtos/folder-ids.dto';
 import { Response } from 'express';
 import { FolderDto } from 'src/storage/dtos/folder.dto';
 import { UpdateFolderDto } from 'src/storage/dtos/update-folder.dto';
+import { FolderRelatedDto } from 'src/storage/dtos/folder-related.dto';
+import { PaginationParamsDto } from 'src/common/dtos/pagination-params.dto';
 
 @Controller('folders')
 @UseGuards(JwtAuthGuard)
 export class FolderController {
   constructor(private readonly folderService: FolderService) {}
 
-  @Get()
+  @Get('owner-content')
   getOwnerFolderContent(
     @Req() req: ExtendedRequest,
     @Query() getFolderContentDto: GetFolderContentDto,
@@ -38,6 +40,17 @@ export class FolderController {
       ownerId: req.user.id,
       ...getFolderContentDto,
     });
+  }
+
+  @Get('recent')
+  getRecentFolders(
+    @Req() req: ExtendedRequest,
+    @Query() paginationParamsDto: PaginationParamsDto,
+  ): Promise<FolderRelatedDto[]> {
+    return this.folderService.getRecentFolders(
+      req.user.id,
+      paginationParamsDto,
+    );
   }
 
   @Post()
