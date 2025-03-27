@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   UploadedFiles,
@@ -24,6 +25,8 @@ import { FileIdsDto } from 'src/storage/dtos/file-ids.dto';
 import { Response } from 'express';
 import { UpdateFileDto } from 'src/storage/dtos/update-file.dto';
 import { FileUrlDto } from 'src/storage/dtos/file-url.dto';
+import { PaginationParamsDto } from 'src/common/dtos/pagination-params.dto';
+import { FileInfoDto } from 'src/storage/dtos/file-info.dto';
 
 @Controller('files')
 @UseGuards(JwtAuthGuard)
@@ -38,6 +41,14 @@ export class FileController {
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<FileDto[]> {
     return this.fileService.upload(req.user.id, files, folderId);
+  }
+
+  @Get('recent')
+  getRecentFiles(
+    @Req() req: ExtendedRequest,
+    @Query() paginationParamsDto: PaginationParamsDto,
+  ): Promise<FileInfoDto[]> {
+    return this.fileService.getRecentFiles(req.user.id, paginationParamsDto);
   }
 
   @Get(':fileId')

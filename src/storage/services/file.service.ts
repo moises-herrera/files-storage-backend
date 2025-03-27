@@ -16,6 +16,8 @@ import { StorageService } from './storage.service';
 import { v4 as uuid } from 'uuid';
 import { FileUrlDto } from 'src/storage/dtos/file-url.dto';
 import { UpdateFileDto } from 'src/storage/dtos/update-file.dto';
+import { PaginationParamsDto } from 'src/common/dtos/pagination-params.dto';
+import { FileInfoDto } from '../dtos/file-info.dto';
 
 @Injectable()
 export class FileService {
@@ -89,6 +91,64 @@ export class FileService {
         },
       );
     }
+  }
+
+  async getRecentFiles(
+    userId: string,
+    { page = 1, pageSize = 10 }: PaginationParamsDto,
+  ): Promise<FileInfoDto[]> {
+    const files = await this.fileRepository.find(
+      {
+        $or: [
+          { owner: userId },
+          {
+            permissions: {
+              user: userId,
+              permission: { name: 'READ' },
+            },
+          },
+        ],
+      },
+      {
+        populate: ['owner', 'folder.name', 'permissions.permission'],
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      },
+    );
+
+    const filesMapped: FileInfoDto[] = files.map(
+      ({
+        id,
+        name,
+        extension,
+        size,
+        mimeType,
+        owner,
+        folder,
+        createdAt,
+        updatedAt,
+      }) => ({
+        id,
+        name,
+        extension,
+        size,
+        mimeType,
+        owner: {
+          id: owner.id,
+          firstName: owner.firstName,
+          lastName: owner.lastName,
+          email: owner.email,
+        },
+        folder: {
+          id: folder.id,
+          name: folder.name,
+        },
+        createdAt,
+        updatedAt,
+      }),
+    );
+
+    return filesMapped;
   }
 
   async upload(
