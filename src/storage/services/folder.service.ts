@@ -15,8 +15,9 @@ import { FolderItemDto } from 'src/storage/dtos/folder-item.dto';
 import { PaginatedResponseDto } from 'src/common/dtos/paginated-response.dto';
 import { FileService } from './file.service';
 import { GetOwnerFolderContentDto } from 'src/storage/dtos/get-folder-content.dto';
-import { FolderRelatedDto } from '../dtos/folder-related.dto';
+import { FolderRelatedDto } from 'src/storage/dtos/folder-related.dto';
 import { PaginationParamsDto } from 'src/common/dtos/pagination-params.dto';
+import { FileToZip } from 'src/storage/interfaces/file-to-zip.interface';
 
 @Injectable()
 export class FolderService {
@@ -268,6 +269,62 @@ export class FolderService {
     }));
 
     return foldersMapped;
+  }
+
+  async getFolderFiles(
+    folderId: string,
+    userId: string,
+    currentPath: string = '',
+  ): Promise<FileToZip[]> {
+    const folder = await this.folderRepository.findOne(
+      {
+        id: folderId,
+        $or: [
+          { owner: userId },
+          { permissions: { user: userId, permission: { name: 'READ' } } },
+        ],
+      },
+      {
+        populate: ['files', 'subFolders.id'],
+        fields: ['id', 'name', 'files', 'subFolders'],
+      },
+    );
+
+    if (
+      !folder ||
+      (folder.subFolders.length === 0 && folder.files.length === 0)
+    ) {
+      return [];
+    }
+
+    const path = currentPath ? `${currentPath}/${folder.name}` : folder.name;
+    const currentFiles: FileToZip[] = folder.files.map(
+      ({ name, storagePath, extension }) => {
+        const fileName = name.split('.').slice(0, -1).join('.');
+
+        return {
+          storagePath,
+          relativePath: `${path}/${fileName}.${extension}`,
+        };
+      },
+    );
+
+    if (folder.subFolders.length === 0) {
+      return currentFiles;
+    }
+
+    const subFolders = folder.subFolders.getItems();
+
+    for (const subFolder of subFolders) {
+      const subFolderFiles = await this.getFolderFiles(
+        subFolder.id,
+        userId,
+        path,
+      );
+      currentFiles.push(...subFolderFiles);
+    }
+
+    return currentFiles;
   }
 
   async update(

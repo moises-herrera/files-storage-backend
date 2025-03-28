@@ -17,7 +17,7 @@ import { v4 as uuid } from 'uuid';
 import { FileUrlDto } from 'src/storage/dtos/file-url.dto';
 import { UpdateFileDto } from 'src/storage/dtos/update-file.dto';
 import { PaginationParamsDto } from 'src/common/dtos/pagination-params.dto';
-import { FileInfoDto } from '../dtos/file-info.dto';
+import { FileInfoDto } from 'src/storage/dtos/file-info.dto';
 
 @Injectable()
 export class FileService {
