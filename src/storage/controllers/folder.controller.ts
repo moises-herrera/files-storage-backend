@@ -25,11 +25,24 @@ import { FolderDto } from 'src/storage/dtos/folder.dto';
 import { UpdateFolderDto } from 'src/storage/dtos/update-folder.dto';
 import { FolderRelatedDto } from 'src/storage/dtos/folder-related.dto';
 import { PaginationParamsDto } from 'src/common/dtos/pagination-params.dto';
+import { StorageService } from 'src/storage/services/storage.service';
+import * as archiver from 'archiver';
 
 @Controller('folders')
 @UseGuards(JwtAuthGuard)
 export class FolderController {
-  constructor(private readonly folderService: FolderService) {}
+  constructor(
+    private readonly folderService: FolderService,
+    private readonly storageService: StorageService,
+  ) {}
+
+  @Post()
+  createFolder(
+    @Req() req: ExtendedRequest,
+    @Body() { name, parentFolderId }: CreateFolderDto,
+  ): Promise<FolderDto> {
+    return this.folderService.create(name, req.user.id, parentFolderId);
+  }
 
   @Get('owner-content')
   getOwnerFolderContent(
@@ -53,12 +66,59 @@ export class FolderController {
     );
   }
 
-  @Post()
-  createFolder(
+  @Get(':id/download')
+  async downloadFolder(
     @Req() req: ExtendedRequest,
-    @Body() { name, parentFolderId }: CreateFolderDto,
-  ): Promise<FolderDto> {
-    return this.folderService.create(name, req.user.id, parentFolderId);
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const filesToZip = await this.folderService.getFolderFiles(
+        id,
+        req.user.id,
+      );
+
+      if (filesToZip.length === 0) {
+        return res.status(HttpStatus.NOT_FOUND).json({
+          message: 'No files found in the folder',
+        });
+      }
+
+      const mainFolderName = filesToZip[0].relativePath.split('/')[0];
+
+      res.header('Content-Type', 'application/zip');
+      res.header(
+        'Content-Disposition',
+        `attachment; filename=${mainFolderName}.zip`,
+      );
+
+      const archive = archiver('zip', {
+        zlib: { level: 9 },
+      });
+      archive.on('error', (err) => {
+        throw err;
+      });
+      archive.pipe(res);
+
+      for (const file of filesToZip) {
+        const fileSignedUrl = await this.storageService.getFileUrl(
+          file.storagePath,
+        );
+        const fileDownloaded = await fetch(fileSignedUrl);
+        const fileArrayBuffer = await fileDownloaded.arrayBuffer();
+        const fileBuffer = Buffer.from(fileArrayBuffer);
+        archive.append(fileBuffer, {
+          name: file.relativePath,
+        });
+      }
+
+      await archive.finalize();
+    } catch (error: unknown) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Error downloading folder',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
 
   @Patch(':id')
