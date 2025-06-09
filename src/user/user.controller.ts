@@ -13,7 +13,6 @@ import { UserService } from './services/user.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { LoginUserDto } from './dtos/login-user.dto';
 import { Response } from 'express';
-import { envConfig } from 'src/config/env.config';
 import { AuthTokens } from './interfaces/auth-tokens.interface';
 import { AuthUserResponseDto } from './dtos/auth-user-response.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -21,10 +20,14 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { ExtendedRequest } from 'src/common/interfaces/extended-request.interface';
 import { UserDto } from './dtos/user.dto';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly userService: UserService,
+  ) {}
 
   @Post('register')
   async register(
@@ -91,14 +94,14 @@ export class UserController {
   ): void {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      secure: envConfig.NODE_ENV === 'production',
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
       sameSite: 'strict',
       maxAge: 60 * 60 * 1000,
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: envConfig.NODE_ENV === 'production',
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
       sameSite: 'strict',
       maxAge: 60 * 60 * 24 * 7 * 1000,
     });

@@ -6,22 +6,33 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
-import { envConfig } from 'src/config/env.config';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class StorageService {
-  private readonly client = new S3Client({
-    region: envConfig.AWS_REGION,
-    credentials: {
-      accessKeyId: envConfig.AWS_ACCESS_KEY_ID,
-      secretAccessKey: envConfig.AWS_SECRET_ACCESS_KEY,
-    },
-  });
+  private client: S3Client;
+  private bucketName: string;
+
+  constructor(private readonly configService: ConfigService) {
+    this.client = new S3Client({
+      region: this.configService.get<string>('AWS_REGION') as string,
+      credentials: {
+        accessKeyId: this.configService.get<string>(
+          'AWS_ACCESS_KEY_ID',
+        ) as string,
+        secretAccessKey: this.configService.get<string>(
+          'AWS_SECRET_ACCESS_KEY',
+        ) as string,
+      },
+    });
+
+    this.bucketName = this.configService.get<string>('BUCKET_NAME') as string;
+  }
 
   async getFileUrl(path: string): Promise<string> {
     const command = new GetObjectCommand({
-      Bucket: envConfig.BUCKET_NAME,
+      Bucket: this.bucketName,
       Key: path,
     });
 
@@ -32,7 +43,7 @@ export class StorageService {
       return url;
     } catch (error) {
       throw new Error(
-        `Error from S3 while generating signed URL for object in ${envConfig.BUCKET_NAME}. ${error}`,
+        `Error from S3 while generating signed URL for object in ${this.bucketName}. ${error}`,
         {
           cause: error,
         },
@@ -42,7 +53,7 @@ export class StorageService {
 
   async uploadFile(file: Express.Multer.File, path: string): Promise<void> {
     const command = new PutObjectCommand({
-      Bucket: envConfig.BUCKET_NAME,
+      Bucket: this.bucketName,
       Key: path,
       Body: file.buffer,
       ContentType: file.mimetype,
@@ -56,21 +67,21 @@ export class StorageService {
         caught.name === 'EntityTooLarge'
       ) {
         throw new Error(
-          `Error from S3 while uploading object to ${envConfig.BUCKET_NAME}. \nThe object was too large. To upload objects larger than 5GB, use the S3 console (160GB max) \nor the multipart upload API (5TB max).`,
+          `Error from S3 while uploading object to ${this.bucketName}. \nThe object was too large. To upload objects larger than 5GB, use the S3 console (160GB max) \nor the multipart upload API (5TB max).`,
           {
             cause: caught,
           },
         );
       } else if (caught instanceof S3ServiceException) {
         throw new Error(
-          `Error from S3 while uploading object to ${envConfig.BUCKET_NAME}. ${caught.name}: ${caught.message}`,
+          `Error from S3 while uploading object to ${this.bucketName}. ${caught.name}: ${caught.message}`,
           {
             cause: caught,
           },
         );
       } else {
         throw new Error(
-          `Error from S3 while uploading object to ${envConfig.BUCKET_NAME}. ${caught}`,
+          `Error from S3 while uploading object to ${this.bucketName}. ${caught}`,
           {
             cause: caught,
           },
@@ -81,7 +92,7 @@ export class StorageService {
 
   async deleteFile(path: string): Promise<void> {
     const command = new DeleteObjectCommand({
-      Bucket: envConfig.BUCKET_NAME,
+      Bucket: this.bucketName,
       Key: path,
     });
 
@@ -89,7 +100,7 @@ export class StorageService {
       await this.client.send(command);
     } catch (error) {
       throw new Error(
-        `Error from S3 while deleting object from ${envConfig.BUCKET_NAME}. ${error}`,
+        `Error from S3 while deleting object from ${this.bucketName}. ${error}`,
         {
           cause: error,
         },

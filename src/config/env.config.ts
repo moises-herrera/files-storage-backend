@@ -1,7 +1,8 @@
 import 'dotenv/config';
+import { SecretsService } from 'src/common/services/secrets.service';
 import { z } from 'zod';
 
-interface EnvConfig {
+export interface EnvConfig {
   NODE_ENV: string;
   PORT: number;
   FRONTEND_URL: string;
@@ -35,10 +36,13 @@ const EnvSchema = z.object({
   AWS_SECRET_ACCESS_KEY: z.string().min(1),
 });
 
-const { data, error } = EnvSchema.safeParse(process.env);
+export default async (): Promise<EnvConfig> => {
+  const secrets = await SecretsService.getSecretValue('dev/app/config');
+  const { data, error } = EnvSchema.safeParse(secrets);
 
-if (error) {
-  throw new Error(`Invalid environment variables: ${error.message}`);
-}
+  if (error) {
+    throw new Error(`Invalid secrets: ${error.message}`);
+  }
 
-export const envConfig: EnvConfig = data;
+  return data;
+};

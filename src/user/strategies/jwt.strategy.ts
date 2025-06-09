@@ -7,18 +7,19 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { User } from 'src/user/entities/user.entity';
 import { EntityRepository } from '@mikro-orm/postgresql';
-import { envConfig } from 'src/config/env.config';
 import { Request } from 'express';
 import { TokenPayload } from 'src/user/interfaces/token-payload.type';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
+    private readonly configService: ConfigService,
     @InjectRepository(User)
     private readonly userRepository: EntityRepository<User>,
   ) {
     super({
-      secretOrKey: envConfig.JWT_SECRET,
+      secretOrKey: configService.get<string>('JWT_SECRET') as string,
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => {
           return (req.cookies as { accessToken: string }).accessToken;
