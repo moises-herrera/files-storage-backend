@@ -6,6 +6,7 @@ import { StorageModule } from './storage/storage.module';
 import { MikroORM, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { AppConfigModule } from './config/app-config.module';
 import { ConfigService } from '@nestjs/config';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ConfigService } from '@nestjs/config';
       inject: [ConfigService],
       driver: PostgreSqlDriver,
     }),
+    HealthModule,
     UserModule,
     StorageModule,
   ],
