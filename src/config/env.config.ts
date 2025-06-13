@@ -18,6 +18,7 @@ export interface EnvConfig {
   AWS_ACCESS_KEY_ID: string;
   AWS_SECRET_ACCESS_KEY: string;
   MASTER_USER_SECRET_ARN?: string;
+  AWS_SECRET_NAME?: string;
 }
 
 const EnvSchema = z.object({
@@ -35,10 +36,14 @@ const EnvSchema = z.object({
   BUCKET_NAME: z.string().min(1),
   AWS_ACCESS_KEY_ID: z.string().min(1),
   AWS_SECRET_ACCESS_KEY: z.string().min(1),
+  MASTER_USER_SECRET_ARN: z.string().optional(),
+  AWS_SECRET_NAME: z.string().optional(),
 });
 
 export default async (): Promise<EnvConfig> => {
-  const secrets = await SecretsService.getSecretValue('dev/app/config');
+  const secrets = await SecretsService.getSecretValue(
+    process.env.AWS_SECRET_NAME || 'cloudnest-app-credentials',
+  );
   const { data, error } = EnvSchema.safeParse(secrets);
 
   if (error) {
