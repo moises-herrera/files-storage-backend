@@ -6,6 +6,7 @@ import { User } from 'src/user/entities/user.entity';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/postgresql';
 import { HasherService } from 'src/common/services/hasher.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(
@@ -13,12 +14,13 @@ export class JwtRefreshStrategy extends PassportStrategy(
   'jwt-refresh',
 ) {
   constructor(
+    private readonly configService: ConfigService,
     @InjectRepository(User)
     private readonly userRepository: EntityRepository<User>,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     super({
-      secretOrKey: process.env.JWT_REFRESH_SECRET,
+      secretOrKey: configService.get<string>('JWT_REFRESH_SECRET') as string,
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => {
           return (req.cookies as { refreshToken: string }).refreshToken;
