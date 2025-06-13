@@ -44,7 +44,10 @@ export default async (): Promise<EnvConfig> => {
   const secrets = await SecretsService.getSecretValue(
     process.env.AWS_SECRET_NAME || 'cloudnest-app-credentials',
   );
-  const { data, error } = EnvSchema.safeParse(secrets);
+  const { data, error } = EnvSchema.safeParse({
+    ...process.env,
+    ...secrets,
+  });
 
   if (error) {
     throw new Error(`Invalid secrets: ${error.message}`);
