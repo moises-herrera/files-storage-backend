@@ -17,6 +17,7 @@ export interface EnvConfig {
   BUCKET_NAME: string;
   AWS_ACCESS_KEY_ID: string;
   AWS_SECRET_ACCESS_KEY: string;
+  MASTER_USER_SECRET_ARN?: string;
 }
 
 const EnvSchema = z.object({
