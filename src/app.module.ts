@@ -35,5 +35,6 @@ export class AppModule implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     await this.orm.getMigrator().up();
+    await this.orm.getSchemaGenerator().updateSchema();
   }
 }
