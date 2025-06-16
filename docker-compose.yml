@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: files-storage-db
+    restart: always
+    env_file:
+      - path: .env
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  app:
+    image: 802041176838.dkr.ecr.us-east-1.amazonaws.com/moisesh21/files-storage:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: files-storage
+    restart: always
+    env_file:
+      - path: .env
+    ports:
+      - 3000:3000
+    depends_on:
+      - db
+
+volumes:
+  db_data:
