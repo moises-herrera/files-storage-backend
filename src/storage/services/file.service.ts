@@ -13,7 +13,7 @@ import { Permission } from 'src/storage/entities/permission.entity';
 import { FilePermission } from 'src/storage/entities/file-permission.entity';
 import { FileDto } from 'src/storage/dtos/file.dto';
 import { StorageService } from './storage.service';
-import { v4 as uuid } from 'uuid';
+import { v4 as uuid, validate as isUUID } from 'uuid';
 import { FileUrlDto } from 'src/storage/dtos/file-url.dto';
 import { UpdateFileDto } from 'src/storage/dtos/update-file.dto';
 import { PaginationParamsDto } from 'src/common/dtos/pagination-params.dto';
@@ -158,7 +158,7 @@ export class FileService {
   ): Promise<FileDto[]> {
     let folderReference: Folder | null;
 
-    if (folderId) {
+    if (isUUID(folderId)) {
       folderReference = await this.entityManager.findOne(Folder, {
         id: folderId,
         $or: [{ permissions: { user: userId, permission: { name: 'WRITE' } } }],
